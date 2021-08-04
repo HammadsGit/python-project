@@ -1,0 +1,630 @@
+import tkinter as tk
+from tkinter import font  as tkfont
+from tkinter import ttk
+import mysql.connector
+import tkinter.messagebox
+
+mydb = mysql.connector.connect(host="localhost", user="root", password="zeOS5eEK", database="carsystem")
+mycursor = mydb.cursor()
+
+class Carsystem(tk.Tk):
+
+
+    def __init__(self, *args, **kwargs):
+        tk.Tk.__init__(self, *args, **kwargs)
+
+        self.title_font = tkfont.Font(family='Helvetica', size=75, weight="bold", slant="italic")
+        self.title_font2 = tkfont.Font(family='Helvetica', size=15, weight="bold")
+        self.title_font3 = tkfont.Font(family='Helvetica', size=45, weight="bold", slant="italic")
+        self.title_font4 = tkfont.Font(size=10, weight="bold")
+
+        tk.Tk.geometry(self, "1000x700+500+200")
+        tk.Tk.resizable(self, width=False, height=False)
+
+
+        # the container is where we'll stack a bunch of frames
+        # on top of each other, then the one we want visible
+        # will be raised above the others
+        container = tk.Frame(self, bg="red")
+        container.pack(side="top", fill="both", expand=True)
+        container.grid_rowconfigure(0, weight=1)
+        container.grid_columnconfigure(0, weight=1)
+
+        self.frames = {}
+
+        for F in (LoginPage, RegisterPage, MainPage):
+            page_name = F.__name__
+            frame = F(parent=container, controller=self)
+            self.frames[page_name] = frame
+
+            frame.grid(row=0, column=0, sticky="nsew")
+
+            self.show_frame("LoginPage")
+
+    def get_page(self, classname):
+        for page in self.frames.values():
+            if str(page.__class__.__name__) == classname:
+                return page
+        return None
+
+
+    def show_frame(self, page_name):
+        '''Show a frame for the given page name'''
+        frame = self.frames[page_name]
+        frame.tkraise()
+
+
+class LoginPage(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+
+        self.HeaderFrame = tk.Frame(self, bg="#485167", width=1000, height=140)
+        self.header = tk.Label(self.HeaderFrame, text="Car459 Management System", font=controller.title_font3,
+                               bg="#485167", width=22,
+                               height=1, anchor="w")
+
+        self.LoginText = tk.Label(self, text="Login", font=controller.title_font2)
+
+        self.User_label = tk.Label(self, text="Username: ")
+        self.Pass_label = tk.Label(self, text="Password: ", height=0)
+
+        self.Userstring = tk.StringVar(self)
+        self.Passstring = tk.StringVar(self)
+
+
+        self.User_entry = tk.Entry(self, textvariable=self.Userstring)
+        self.Pass_entry = tk.Entry(self, textvariable=self.Passstring, show="*")
+
+        self.Quick = tk.Button(self, text="MainPage", command=lambda:controller.show_frame("MainPage"), width=10, height=5)
+
+
+        self.LoginButton = tk.Button(self, text="Login", command=lambda: LoginPage.Login(self))
+        self.RegisterButton = tk.Button(self, text="Registration",
+                            command=lambda: controller.show_frame("RegisterPage"))
+
+        self.HeaderFrame.place(x=0, y=0)
+        self.header.place(x=475, y=65, anchor="center")
+        self.LoginText.place(x=50, y=150)
+        self.User_label.place(x=50, y=250)
+        self.User_entry.place(x=125, y=250)
+        self.Pass_entry.place(x=125, y=275)
+        self.Pass_label.place(x=50, y=275)
+        self.LoginButton.place(x=200, y=350)
+        self.RegisterButton.place(x=250, y=350)
+        # self.Quick.place(x=500, y=500)
+
+    def reset(self):
+        self.Userstring.set("")
+        self.Passstring.set("")
+
+
+
+    def Login(self):
+        Login = False
+        Username = self.User_entry.get()
+        Password = self.Pass_entry.get()
+
+
+        mycursor.execute("SELECT sellername, Password FROM seller")
+        myresult = mycursor.fetchall()
+
+        for current in myresult:
+            if Username == current[0] and Password == current[1]:
+                Login = True
+                tk.messagebox.showinfo("Successful Login", "Congratulations You have logged in successfully!")
+
+        if Login == True:
+            view = self.controller.get_page("MainPage")
+            viedata = view.ViewData()
+            self.controller.show_frame("MainPage")
+            # self.reset()
+        else:
+            # self.reset()
+            tk.messagebox.showinfo("Login Unsuccessful", "You have entered invalid password or username.")
+
+        return Login
+
+class RegisterPage(LoginPage):
+
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+
+        self.HeaderFrame = tk.Frame(self, bg="#485167", width=1000, height=140)
+
+        self.header = tk.Label(self.HeaderFrame, text="Car459 Management System", font=controller.title_font3,
+                               bg="#485167", width=22,
+                               height=1, anchor="w")
+
+        self.BackToLogin = tk.Button(self, text="Back to the Login page",
+                           command=lambda: controller.show_frame("LoginPage"))
+
+        self.RegisterText = tk.Label(self, text="Account Registration", font=controller.title_font2)
+
+        LoginPage.Userstring = tk.StringVar(self)
+        LoginPage.Passstring = tk.StringVar(self)
+
+        self.User_entry = tk.Entry(self, textvariable=LoginPage.Userstring)
+        self.Pass_entry = tk.Entry(self, textvariable=LoginPage.Passstring)
+
+        self.RegButton = tk.Button(self, text="Register", command=lambda: RegisterPage.Register(self))
+
+        self.User_label = tk.Label(self, text="Username: ")
+        self.Pass_label = tk.Label(self, text="Password: ", height=0)
+
+
+        self.HeaderFrame.place(x=0, y=0)
+        self.header.place(x=475, y=65, anchor="center")
+
+        self.BackToLogin.place(x=260, y=350)
+        self.RegisterText.place(x=50, y=150)
+        self.User_label.place(x=50, y=250)
+        self.User_entry.place(x=125, y=250)
+        self.Pass_entry.place(x=125, y=275)
+        self.Pass_label.place(x=50, y=275)
+        self.RegButton.place(x=200, y=350)
+
+    def Register(self):
+        AlreadyReg = False
+
+        Username = self.User_entry.get()
+        Password = self.Pass_entry.get()
+
+        mycursor.execute("SELECT sellername FROM seller")
+        myresult = mycursor.fetchall()
+
+        for account in myresult:
+            if Username == account[0]:
+                AlreadyReg = True
+                tk.messagebox.showinfo("Unsuccessful Register!", "An account already exists with the same username, "
+                                                                 "please choose a different username.")
+                LoginPage.reset(self)
+
+        if Username.isspace() == True or len(Username) == 0:
+            AlreadyReg = True
+            tk.messagebox.showinfo("Unsuccessful Register!", "You have not entered a username, please try again.")
+            LoginPage.reset(self)
+        elif Password.isspace() == True or len(Password) == 0:
+            AlreadyReg = True
+            tk.messagebox.showinfo("Unsuccessful Register!", "You have not entered a password, please try again.")
+            LoginPage.reset(self)
+
+        elif AlreadyReg == False:
+
+            sqlFormula = "INSERT INTO seller(sellername, password) VALUES(%s, %s);"
+            User = (Username, Password)
+
+            mycursor.execute(sqlFormula, User)
+            mydb.commit()
+            tk.messagebox.showinfo("Successful Register!",
+                                   "You have successfully registered, now you can go back to the "
+                                   "log-in page to get started. ")
+            LoginPage.reset(self)
+
+
+class MainPage(LoginPage):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+
+        self.HeaderFrame = tk.Frame(self, bg="#485167", width=1000, height=140, relief="groove", borderwidth=8)
+
+        self.header = tk.Label(self.HeaderFrame, text="Car459 Management System", font=controller.title_font3, bg="#485167", width=22,
+                       height=1, anchor="w")
+
+        self.Basicframe = tk.Frame(self, width=1000, height=475, bg="#485167", relief="groove", borderwidth=8)
+
+        self.DetailText = tk.Label(self.Basicframe, text="Details", font=controller.title_font2, bg="#485167")
+        self.TransactionsText = tk.Label(self.Basicframe, text="Transactions", font=controller.title_font2, bg="#485167")
+
+        self.Infoframe = tk.Frame(self.Basicframe, width=300, height=250)
+
+        self.LCarname = tk.Label(self.Infoframe, text="Carname: ", font=controller.title_font4)
+        self.CarNamestring = tk.StringVar(self)
+        self.ECarname = tk.Entry(self.Infoframe, textvariable=self.CarNamestring)
+
+        self.LColour = tk.Label(self.Infoframe, text="Colour of car: ", font=controller.title_font4)
+        self.Colourstring = tk.StringVar(self)
+        self.EColour = tk.Entry(self.Infoframe, textvariable=self.Colourstring)
+
+        self.LMileage = tk.Label(self.Infoframe, text="Mileage: ", font=controller.title_font4)
+        self.Mileagestring = tk.StringVar(self)
+        self.EMileage = tk.Entry(self.Infoframe, textvariable=self.Mileagestring)
+
+        self.LCondition = tk.Label(self.Infoframe, text="Condition of car: ", font=controller.title_font4)
+        self.Conditionstring = tk.StringVar(self)
+        self.ECondition = tk.Entry(self.Infoframe, textvariable=self.Conditionstring)
+
+        self.LBuyerName = tk.Label(self.Infoframe, text="Buyer Name: ", font=controller.title_font4)
+        self.BuyerName = tk.StringVar(self)
+        self.EBuyerName = tk.Entry(self.Infoframe, textvariable=self.BuyerName)
+
+        self.LBuyerLName = tk.Label(self.Infoframe, text="Buyer Last-Name: ", font=controller.title_font4)
+        self.BuyerLName = tk.StringVar(self)
+        self.EBuyerLName = tk.Entry(self.Infoframe, textvariable=self.BuyerLName)
+
+        self.LPostcode = tk.Label(self.Infoframe, text="Postcode: ", font=controller.title_font4)
+        self.Postcode = tk.StringVar(self)
+        self.EPostcode = tk.Entry(self.Infoframe, textvariable=self.Postcode)
+
+        self.SearchFrame = tk.Frame(self.Basicframe, width=300, height=142)
+
+        self.LComboSearch = tk.Label(self.SearchFrame, text="Search By: ", font=controller.title_font4)
+        self.EComboSearch = ttk.Combobox(self.SearchFrame, state="readonly")
+        self.EComboSearch["values"] = ("Date", "Cost", "Mileage")
+
+        self.PrintPDF = tk.Button(self.SearchFrame, text="Print to PDF")
+        self.Stats = tk.Button(self.SearchFrame, text="Statistics")
+        self.SaveTOText = tk.Button(self.SearchFrame, text="Save to Text")
+
+        self.DataFrame = tk.Frame(self.Basicframe, width=575, height=400, bg="blue")
+
+        self.Transaction_Table = ttk.Treeview(self.DataFrame, height=19)
+        self.Transaction_Table["columns"] = ("carID", "seller", "BuyerName", "BuyerAddress", "Carname", "condition", "Mileage", "color")
+        self.Transaction_Table.grid(row=2, column=5, columnspan=5)
+
+        self.Transaction_Table.heading("carID", text="carID")
+        self.Transaction_Table.column("carID", width=60, anchor="w")
+        self.Transaction_Table.heading("seller", text="seller")
+        self.Transaction_Table.column("seller", width=60, anchor="w")
+        self.Transaction_Table.heading("BuyerName", text="BuyerName")
+        self.Transaction_Table.column("BuyerName", width=90, anchor="w")
+        self.Transaction_Table.heading("BuyerAddress", text="Buyer Address")
+        self.Transaction_Table.column("BuyerAddress", width=100, anchor="w")
+        self.Transaction_Table.heading("Carname", text="Carname")
+        self.Transaction_Table.column("Carname", width=90, anchor="w")
+        self.Transaction_Table.heading("condition", text="condition")
+        self.Transaction_Table.column("condition", width=60, anchor="w")
+        self.Transaction_Table.heading("Mileage", text="Mileage")
+        self.Transaction_Table.column("Mileage", width=70, anchor="w")
+        self.Transaction_Table.heading("color", text="color")
+        self.Transaction_Table.column("color", width=60, anchor="w")
+        self.Transaction_Table['show'] = 'headings'
+
+        self.scroll_y = ttk.Scrollbar(self.DataFrame, command=self.Transaction_Table.yview)
+        self.Transaction_Table.config(yscroll=self.scroll_y.set)
+        self.scroll_y.grid(row=2, column=10, sticky="ns")
+
+        self.ButtonFrame = tk.Frame(self, width= 1000, height=85, bg="#485167", relief="groove", borderwidth=10)
+        self.AddB = tk.Button(self.ButtonFrame, text="Add", width=15, height=2, command=self.AddData)
+        self.UpdateB = tk.Button(self.ButtonFrame, text="Update", width=15, height=2, command=self.Update)
+        self.DeleteB = tk.Button(self.ButtonFrame, text="Delete", width=15, height=2, command=self.DeleteData)
+        self.ClearB = tk.Button(self.ButtonFrame, text="Clear", width=15, height=2, command=self.ClearData)
+        self.SearchB = tk.Button(self.ButtonFrame, text="Search", width=15, height=2)
+        self.DisplayB = tk.Button(self.ButtonFrame, text="Display", width=15, height=2)
+        self.ExitB = tk.Button(self.ButtonFrame, text="Log-Out", width=15, height=2,
+                               command=lambda: controller.show_frame("LoginPage"))
+
+
+        self.HeaderFrame.place(x=0, y=0)
+        self.header.place(x=475, y=65, anchor="center")
+
+        self.Basicframe.place(x=0, y=140)
+        self.Infoframe.place(x=25, y=35)
+        self.DataFrame.place(x=350, y= 35)
+        self.ButtonFrame.place(x=0, y=615)
+        self.SearchFrame.place(x=25, y= 300)
+
+
+        self.DetailText.place(x=25, y=10)
+        self.TransactionsText.place(x=450, y=10)
+
+        self.LCarname.place(x=10, y=2)
+        self.ECarname.place(x=150, y=2)
+
+        self.LColour.place(x=10, y=25)
+        self.EColour.place(x=150, y=25)
+
+        self.LMileage.place(x=10, y=50)
+        self.EMileage.place(x=150, y=50)
+
+        self.LCondition.place(x=10, y=75)
+        self.ECondition.place(x=150, y=75)
+
+        self.LBuyerName.place(x= 10, y= 125)
+        self.EBuyerName.place(x=150, y=125)
+
+        self.LBuyerLName.place(x=10, y=150)
+        self.EBuyerLName.place(x=150, y=150)
+
+        self.LPostcode.place(x=10, y=175)
+        self.EPostcode.place(x=150, y=175)
+
+        self.LComboSearch.place(x=10, y=10)
+        self.EComboSearch.place(x=150, y=10)
+        self.PrintPDF.place(x=10, y=110)
+        self.Stats.place(x=90, y=110)
+        self.SaveTOText.place(x=155, y=110)
+
+
+        self.AddB.place(x=25, y=15)
+        self.UpdateB.place(x=160, y=15)
+        self.DeleteB.place(x=295, y=15)
+        self.ClearB.place(x=430, y=15)
+        self.SearchB.place(x=565, y=15)
+        self.DisplayB.place(x=700, y=15)
+        self.ExitB.place(x=835, y=15)
+
+        self.Tempseller = tk.StringVar(self)
+        self.carid = tk.StringVar(self)
+
+        self.Transaction_Table.bind("<ButtonRelease-1>", self.Get_Data)
+
+
+
+    def GetSeller(self):
+        Login_Page = self.controller.get_page("LoginPage")
+        Value = Login_Page.User_entry.get()
+
+        return Value
+
+    def ClearData(self):
+        self.CarNamestring.set("")
+        self.Colourstring.set("")
+        self.Mileagestring.set("")
+        self.Conditionstring.set("")
+        self.BuyerName.set("")
+        self.BuyerLName.set("")
+        self.Postcode.set("")
+
+    def ViewData(self):
+        seller = self.GetSeller()
+
+        mycursor.execute("SELECT sellerID FROM seller WHERE sellername = '{}';".format(seller))
+
+        # "sellerID[0]" is the actual sellerID
+        sellerID = mycursor.fetchone()
+
+        mycursor.execute("SELECT carid, sellername, buyername,buyerLname, postcode, carname, conditionofcar, mileage, clrofcar FROM seller, buyer, car WHERE seller.sellerid = {} AND car.sellerID = seller.sellerID AND car.buyerID = buyer.buyerID ORDER BY car.carid;".format(sellerID[0]))
+
+        myresult = mycursor.fetchall()
+
+        for row in myresult:
+            self.Transaction_Table.insert("", "end", values=(row[0], row[1], "{} {}".format(row[2],row[3]), row[4], row[5], row[6], row[7], row[8]))
+
+    def AddData(self):
+        AddData = False
+        seller = self.GetSeller()
+        mycursor.execute("SELECT sellerID FROM seller WHERE sellername = '{}';".format(seller))
+
+        # "sellerID[0]" is the actual sellerID
+        sellerID = mycursor.fetchone()
+        BuyerFirstName = self.EBuyerName.get()
+        BuyerLastName = self.EBuyerLName.get()
+
+        Buyername = "{} {}".format(BuyerFirstName, BuyerLastName)
+        Buyeraddress = self.EPostcode.get()
+
+        carname = self.ECarname.get()
+        condition = self.ECondition.get()
+        Mileage = self.EMileage.get()
+        colour = self.EColour.get()
+
+        MileageINT = Mileage.isnumeric()
+
+        if MileageINT == False:
+            tk.messagebox.showinfo("Unsuccessful Add", "You have not entered Mileage as a number please try again!")
+            AddData = True
+            self.ClearData()
+        elif BuyerFirstName.isspace() == True or len(BuyerFirstName) == 0 or BuyerLastName.isspace() == True or len(BuyerLastName) == 0 or Buyeraddress.isspace() == True or len(Buyeraddress) == 0 or carname.isspace() == True or len(carname) == 0 or condition.isspace() == True or len(condition) == 0 or Mileage.isspace() == True or len(Mileage) == 0 or colour.isspace() == True or len(colour) == 0:
+            tk.messagebox.showinfo("Unsuccessful Add", "You have left one of the entries blank, please try again!")
+            AddData = True
+            self.ClearData()
+
+        if AddData == False:
+            ALreadyBuyer = False
+            mycursor.execute("SELECT buyername, buyerLname, postcode FROM buyer;")
+            myresult = mycursor.fetchall()
+            for row in myresult:
+                if row[0].lower() == BuyerFirstName.lower() and row[1].lower() == BuyerLastName.lower() and row[2] == Buyeraddress:
+                    ALreadyBuyer = True
+
+            if ALreadyBuyer == True:
+                mycursor.execute(
+                    "SELECT buyerID FROM buyer WHERE buyername = '{}' AND buyerLname = '{}' AND postcode = '{}';".format(
+                        BuyerFirstName, BuyerLastName, Buyeraddress))
+
+                #  "buyerID[0]" is the  buyerID.
+                buyerID = mycursor.fetchone()
+
+                carformula = "INSERT INTO car(carname, clrofcar, mileage, conditionofcar, cost, sellerID, buyerID) VALUES(%s, %s, %s, %s, %s, %s, %s);"
+                car = (carname, colour, Mileage, condition, 100, sellerID[0], buyerID[0])
+                mycursor.execute(carformula, car)
+                mydb.commit()
+
+                mycursor.execute("SELECT carid FROM car WHERE carname = '{}' AND clrofcar = '{}' AND mileage = {} AND conditionofcar = '{}' AND sellerID = {} AND buyerID = {}".format(carname, colour, Mileage, condition, sellerID[0], buyerID[0]))
+                carid = mycursor.fetchone()
+
+                self.Transaction_Table.insert("", "end",
+                                              values=(carid[0], seller, Buyername, Buyeraddress, carname, condition, Mileage, colour))
+                self.ClearData()
+
+            else:
+                buyerformula = "INSERT INTO buyer(buyerName, buyerLname, postcode) VALUES(%s, %s, %s);"
+                buyer = (BuyerFirstName, BuyerLastName, Buyeraddress)
+                mycursor.execute(buyerformula, buyer)
+
+                mydb.commit()
+
+                mycursor.execute(
+                    "SELECT buyerID FROM buyer WHERE buyername = '{}' AND buyerLname = '{}' AND postcode = '{}';".format(
+                        BuyerFirstName, BuyerLastName, Buyeraddress))
+
+                #  "buyerID[0]" is the  buyerID.
+                buyerID = mycursor.fetchone()
+
+                carformula = "INSERT INTO car(carname, clrofcar, mileage, conditionofcar, cost, sellerID, buyerID) VALUES(%s, %s, %s, %s, %s, %s, %s);"
+                car = (carname, colour, Mileage, condition, 100, sellerID[0], buyerID[0])
+                mycursor.execute(carformula, car)
+                mydb.commit()
+
+                mycursor.execute("SELECT carid FROM car WHERE carname = '{}' AND clrofcar = '{}' AND mileage = {} AND conditionofcar = '{}' AND sellerID = {} AND buyerID = {}".format(carname, colour, Mileage, condition, sellerID[0], buyerID[0]))
+                carid = mycursor.fetchone()
+
+                self.Transaction_Table.insert("", "end",
+                                              values=(carid[0], seller, Buyername, Buyeraddress, carname, condition, Mileage, colour))
+                self.ClearData()
+
+    def Get_Data(self, event):
+        cursor_row = self.Transaction_Table.focus()
+        contents = self.Transaction_Table.item(cursor_row)
+        row = contents['values']
+        Name = row[2].split(" ")
+        self.Tempseller.set(str(row[1]))
+        self.carid.set("{}".format(row[0]))
+        self.CarNamestring.set(row[4])
+        self.Colourstring.set(row[7])
+        self.Mileagestring.set(row[6])
+        self.Conditionstring.set(row[5])
+        self.BuyerName.set(Name[0])
+        self.BuyerLName.set(Name[1])
+        self.Postcode.set(row[3])
+
+        return row
+
+
+    def DeleteData(self):
+        DeleteData = False
+        carid = self.carid.get()
+        seller = self.Tempseller.get()
+        mycursor.execute("SELECT sellerID FROM seller WHERE sellername = '{}';".format(seller))
+
+        # "sellerID[0]" is the actual sellerID
+        sellerID = mycursor.fetchone()
+
+        BuyerFirstName = self.EBuyerName.get()
+        BuyerLastName = self.EBuyerLName.get()
+        Buyeraddress = self.EPostcode.get()
+
+        carname = self.ECarname.get()
+        condition = self.ECondition.get()
+        Mileage = self.EMileage.get()
+        colour = self.EColour.get()
+
+        MileageINT = Mileage.isnumeric()
+
+        if MileageINT == False:
+            tk.messagebox.showinfo("Unsuccessful Delete!", "You have not entered Mileage as a number please try again!")
+            DeleteData = True
+            self.ClearData()
+        elif BuyerFirstName.isspace() == True or len(BuyerFirstName) == 0 or BuyerLastName.isspace() == True or len(BuyerLastName) == 0 or Buyeraddress.isspace() == True or len(Buyeraddress) == 0 or carname.isspace() == True or len(carname) == 0 or condition.isspace() == True or len(condition) == 0 or Mileage.isspace() == True or len(Mileage) == 0 or colour.isspace() == True or len(colour) == 0:
+            tk.messagebox.showinfo("Unsuccessful Delete!", "You have left one of the entries blank, please try again!")
+            DeleteData = True
+            self.ClearData()
+
+        if DeleteData == False:
+            Onebuyer = False
+
+            mycursor.execute(
+                "SELECT buyerID FROM buyer WHERE buyername = '{}' AND buyerLname = '{}' AND postcode = '{}';".format(
+                    BuyerFirstName, BuyerLastName, Buyeraddress))
+
+            #  "buyerID[0]" is the  buyerID.
+            buyerID = mycursor.fetchone()
+
+            mycursor.execute("SELECT CARID FROM car WHERE buyerID = {};".format(buyerID[0]))
+
+            myresult = mycursor.fetchall()
+
+            if len(myresult) <= 1:
+                Onebuyer = True
+            else:
+                Onebuyer = False
+
+
+
+            if Onebuyer == True:
+
+                DcarFormula = "DELETE FROM car WHERE carid = {} AND carname = '{}' AND clrofcar='{}' AND mileage={} AND conditionofcar = '{}' AND sellerID = {} AND buyerID = {};".format(carid, carname, colour, Mileage, condition, sellerID[0], buyerID[0])
+
+                mycursor.execute(DcarFormula)
+                mydb.commit()
+
+                DbuyerFormula = "DELETE FROM buyer WHERE buyerID = {} AND buyername = '{}' AND buyerLname = '{}' AND postcode = '{}';".format(buyerID[0], BuyerFirstName, BuyerLastName, Buyeraddress)
+                mycursor.execute(DbuyerFormula)
+                mydb.commit()
+
+                selected_item = self.Transaction_Table.selection()
+                self.Transaction_Table.delete(selected_item)
+                self.ClearData()
+
+            if Onebuyer == False:
+                DcarFormula = "DELETE FROM car WHERE carid = {} AND carname = '{}' AND clrofcar='{}' AND mileage={} AND conditionofcar = '{}' AND sellerID = {} AND buyerID = {};".format(carid, carname, colour, Mileage, condition, sellerID[0], buyerID[0])
+
+
+                mycursor.execute(DcarFormula)
+                mydb.commit()
+
+                selected_item = self.Transaction_Table.selection()
+                self.Transaction_Table.delete(selected_item)
+                self.ClearData()
+
+    def Update(self):
+
+
+        UpdateData = False
+        carid = self.carid.get()
+        seller = self.Tempseller.get()
+
+        mycursor.execute("SELECT sellerID FROM seller WHERE sellername = '{}';".format(seller))
+
+        # "sellerID[0]" is the actual sellerID
+        sellerID = mycursor.fetchone()
+
+        BuyerFirstName = self.EBuyerName.get()
+        BuyerLastName = self.EBuyerLName.get()
+        Buyeraddress = self.EPostcode.get()
+
+        carname = self.ECarname.get()
+        condition = self.ECondition.get()
+        Mileage = self.EMileage.get()
+        colour = self.EColour.get()
+
+        MileageINT = Mileage.isnumeric()
+
+        if MileageINT == False:
+            tk.messagebox.showinfo("Unsuccessful Delete!", "You have not entered Mileage as a number please try again!")
+            UpdateData = True
+            self.ClearData()
+        elif BuyerFirstName.isspace() == True or len(BuyerFirstName) == 0 or BuyerLastName.isspace() == True or len(BuyerLastName) == 0 or Buyeraddress.isspace() == True or len(Buyeraddress) == 0 or carname.isspace() == True or len(carname) == 0 or condition.isspace() == True or len(condition) == 0 or Mileage.isspace() == True or len(Mileage) == 0 or colour.isspace() == True or len(colour) == 0:
+            tk.messagebox.showinfo("Unsuccessful Delete!", "You have left one of the entries blank, please try again!")
+            UpdateData = True
+            self.ClearData()
+
+        cursor_row = self.Transaction_Table.focus()
+        contents = self.Transaction_Table.item(cursor_row)
+        row = contents['values']
+        Name = row[2].split(" ")
+
+        mycursor.execute(
+            "SELECT buyerID FROM buyer WHERE buyername = '{}' AND buyerLname = '{}' AND postcode = '{}';".format(
+                Name[0], Name[1], row[3]))
+
+        #  "buyerID[0]" is the  buyerID.
+        buyerID = mycursor.fetchone()
+
+        if UpdateData == False:
+            mycursor.execute("UPDATE buyer SET buyerName = '{}', buyerLname = '{}', postcode = '{}' WHERE buyerID = {};".format(BuyerFirstName, BuyerLastName, Buyeraddress, buyerID[0]))
+
+
+            mycursor.execute("UPDATE car SET carname = '{}', clrofcar = '{}', mileage = {}, conditionofcar = '{}' WHERE sellerID = {} AND buyerID = {};".format(carname, colour, Mileage, condition, sellerID[0], buyerID[0]))
+            mydb.commit()
+
+
+            self.Transaction_Table.delete(*self.Transaction_Table.get_children())
+            self.ViewData()
+            self.ClearData()
+
+
+def Main():
+    app = Carsystem()
+    app.title("Car459 Software")
+    app.mainloop()
+
+if __name__ == "__main__":
+    Main()
+
