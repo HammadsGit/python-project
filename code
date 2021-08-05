@@ -4,7 +4,7 @@ from tkinter import ttk
 import mysql.connector
 import tkinter.messagebox
 
-mydb = mysql.connector.connect(host="localhost", user="root", password="zeOS5eEK", database="carsystem")
+mydb = mysql.connector.connect(host="localhost", user="root", password="hey", database="carsystem")
 mycursor = mydb.cursor()
 
 class Carsystem(tk.Tk):
